@@ -26,7 +26,7 @@ pip install -r requirements.txt
 Crie o banco de dados SQLite:
 
 ```
-sqlite3 ./db/emprendimentos.db < ./db/generate_tables.sql
+sqlite3 ./db/emprendimentos.sqlite3 < ./db/generate_tables.sql
 ```
 
 Execute o script `main.py` para iniciar o processo de extração e inserção de dados:
