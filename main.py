@@ -12,7 +12,7 @@ DB_PATH = "./db/emprendimentos.db"
 API_ENDPOINT = "https://dadosabertos.aneel.gov.br/api/3/action/datastore_search?resource_id=b1bd71e7-d0ad-4214-9053-cbd58e9564a7"
 
 
-def get_data(page, limit=LIMIT, api_endpoint=API_ENDPOINT):
+def fetch_data(page, limit=LIMIT, api_endpoint=API_ENDPOINT):
     params = {"offset": page * limit, "limit": limit}
     response = requests.get(api_endpoint, params=params)
     if response.status_code == 200:
@@ -35,8 +35,8 @@ def get_sql_query(data):
     return sql
 
 
-def fetch_page(page, limit, data_queue, progress_queue):
-    data, _ = get_data(page, limit)
+def fetch_and_enqueue_page(page, limit, data_queue, progress_queue):
+    data, _ = fetch_data(page, limit)
     if data:
         data_queue.put(data)
     progress_queue.put(1)
@@ -70,12 +70,12 @@ def main():
     data_queue = queue.Queue()
     progress_queue = queue.Queue()
 
-    initial_data, total_records = get_data(0, 1)
+    initial_data, total_records = fetch_data(0, 1)
     total_pages = get_total_pages(total_records)
     sql = get_sql_query(initial_data)
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        _, total_records = get_data(0, 1)
+        _, total_records = fetch_data(0, 1)
 
         write_thread = threading.Thread(
             target=write_to_db,
@@ -84,7 +84,9 @@ def main():
         write_thread.start()
 
         futures = [
-            executor.submit(fetch_page, page, LIMIT, data_queue, progress_queue)
+            executor.submit(
+                fetch_and_enqueue_page, page, LIMIT, data_queue, progress_queue
+            )
             for page in range(total_pages)
         ]
 
