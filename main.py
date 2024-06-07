@@ -75,8 +75,6 @@ def main():
     sql = get_sql_query(initial_data)
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        _, total_records = fetch_data(0, 1)
-
         write_thread = threading.Thread(
             target=write_to_db,
             args=(data_queue, sql),
